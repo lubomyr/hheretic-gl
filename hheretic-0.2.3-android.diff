@@ -1,0 +1,52 @@
+diff -ru hheretic-0.2.3-src-orig/sdl/i_sdlgl.c hheretic-0.2.3-src/sdl/i_sdlgl.c
+--- hheretic-0.2.3-src-orig/sdl/i_sdlgl.c	2010-11-12 17:50:38.000000000 +0200
++++ hheretic-0.2.3-src/sdl/i_sdlgl.c	2016-04-15 18:44:03.690019977 +0300
+@@ -14,6 +14,10 @@
+ #include "r_local.h"
+ #include "ogl_def.h"
+ 
++#ifdef ANDROID
++#include <android/log.h>
++#endif
++
+ #define BASE_WINDOW_FLAGS	(SDL_OPENGL)
+ #ifdef FULLSCREEN_DEFAULT
+ #define DEFAULT_FLAGS		(BASE_WINDOW_FLAGS|SDL_FULLSCREEN)
+@@ -154,7 +158,15 @@
+ 	}
+ 
+ 	vid_initialized = true;
+-
++#ifdef ANDROID
++	screenWidth  = SDL_ListModes(NULL, 0)[0]->w;
++	screenHeight = SDL_ListModes(NULL, 0)[0]->h;
++	if (SDL_SetVideoMode(screenWidth, screenHeight, 8, flags) == NULL)
++	{
++		I_Error("Couldn't set video mode %dx%d: %s\n",
++			screenWidth, screenHeight, SDL_GetError());
++	}
++#endif
+ 	OGL_InitRenderer ();
+ 
+ 	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+@@ -350,6 +362,9 @@
+ 
+ 	switch (Event->type)
+ 	{
++	case SDL_ACTIVEEVENT:
++	  __android_log_print(ANDROID_LOG_INFO, "SDL","SDL_ACTIVEEVENT\n");
++	
+ 	case SDL_KEYDOWN:
+ 		mod = SDL_GetModState ();
+ 		if (mod & (KMOD_RCTRL|KMOD_LCTRL))
+diff -ru hheretic-0.2.3-src-orig/unix/i_linux.c hheretic-0.2.3-src/unix/i_linux.c
+--- hheretic-0.2.3-src-orig/unix/i_linux.c	2010-08-26 03:20:32.000000000 +0300
++++ hheretic-0.2.3-src/unix/i_linux.c	2015-09-13 19:28:22.000000000 +0300
+@@ -13,6 +13,7 @@
+ #include <errno.h>
+ #include "doomdef.h"
+ #include "soundst.h"
++#include <SDL.h>
+ 
+ extern void I_StartupMouse(void);
+ extern void I_ShutdownGraphics(void);
